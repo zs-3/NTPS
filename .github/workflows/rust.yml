@@ -1,41 +1,61 @@
 
-name: NTPS Rust CI
+name: NTPS Build and Release
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    tags:
+      - "v*"
+
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build (example: v0.1.0)"
+        required: true
+        default: "v0.1.0"
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-    name: Build and test NTPS
-    runs-on: ubuntu-latest
+    name: Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            os: ubuntu-latest
+            binary: ntps
+
+          - platform: windows-x86_64
+            os: windows-latest
+            binary: ntps.exe
+
+          - platform: macos-arm64
+            os: macos-latest
+            binary: ntps
+
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
-      - name: Cache Rust dependencies
+      - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Format Rust source automatically
+      - name: Format source
         run: cargo fmt --all
-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
 
       - name: Check compilation
         run: cargo check --all-features
@@ -46,5 +66,38 @@ jobs:
       - name: Run tests
         run: cargo test --all-features
 
-      - name: Build release binary
+      - name: Build release
         run: cargo build --release
+
+      - name: Prepare release binary
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp "target/release/${{ matrix.binary }}" \
+             "dist/ntps-${{ matrix.platform }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ntps-${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: release-assets/*
+          fail_on_unmatched_files: true
