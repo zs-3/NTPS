@@ -15,7 +15,7 @@ struct DomainRequest {
 #[derive(Deserialize)]
 struct ApiError { error: Option<String>, message: Option<String> }
 
-fn client(cfg: &Config) -> Result<reqwest::Client> {
+fn client(_cfg: &Config) -> Result<reqwest::Client> {
     Ok(reqwest::Client::builder().https_only(false).timeout(std::time::Duration::from_secs(15)).build()?)
 }
 fn sign_payload(key: &SigningKey, payload: &str) -> String {
