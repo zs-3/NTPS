@@ -9,7 +9,7 @@ use std::{
 use tokio::net::{TcpListener, TcpStream};
 use tracing::warn;
 
-use crate::wire::{self, Response};
+use crate::wire::{self, Request, Response};
 
 pub async fn run(root: PathBuf, addr: SocketAddr, max_bytes: u64) -> Result<()> {
     let listener = TcpListener::bind(addr)
