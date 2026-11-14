@@ -1,7 +1,7 @@
 use anyhow::{bail, Context, Result};
 use ed25519_dalek::{Signer, SigningKey};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+
 use crate::{config::Config, identity};
 
 #[derive(Serialize)]
