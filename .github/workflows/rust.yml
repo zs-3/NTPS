@@ -31,6 +31,9 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Format Rust source automatically
+        run: cargo fmt --all
+
       - name: Check formatting
         run: cargo fmt --all -- --check
 
