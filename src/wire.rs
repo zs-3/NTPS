@@ -20,10 +20,7 @@ pub struct Response {
     pub body_sha256: String,
 }
 
-pub async fn read_request<R: AsyncReadExt + Unpin>(
-    r: &mut R,
-    max: usize,
-) -> Result<Request> {
+pub async fn read_request<R: AsyncReadExt + Unpin>(r: &mut R, max: usize) -> Result<Request> {
     let mut magic = [0u8; 8];
 
     r.read_exact(&mut magic).await?;
